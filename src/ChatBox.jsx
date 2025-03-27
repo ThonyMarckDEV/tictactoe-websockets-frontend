@@ -26,7 +26,8 @@ const ChatBox = ({
   chatInput,   
   setChatInput,   
   sendChatMessage,
-  currentUsername
+  currentUsername,
+  opponentUsername // New prop to specify the opponent's username
 }) => {   
   const [isFullscreen, setIsFullscreen] = useState(false);    
   const [hasNewMessages, setHasNewMessages] = useState(false);
