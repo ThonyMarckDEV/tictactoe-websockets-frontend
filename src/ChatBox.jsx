@@ -27,7 +27,7 @@ const ChatBox = ({
   setChatInput,   
   sendChatMessage,
   currentUsername,
-  opponentUsername // New prop to specify the opponent's username
+  opponentUsername
 }) => {   
   const [isFullscreen, setIsFullscreen] = useState(false);    
   const [hasNewMessages, setHasNewMessages] = useState(false);
@@ -114,7 +114,7 @@ const ChatBox = ({
           <div              
             id="chat-messages"             
             className={`               
-              overflow-y-auto p-4 flex flex-col space-y-2 flex-grow               
+              overflow-y-auto p-4 flex flex-col space-y-4 flex-grow               
               ${isFullscreen ? 'h-[calc(100%-120px)]' : 'h-full'}             
             `}
             onClick={() => {
@@ -126,10 +126,10 @@ const ChatBox = ({
               <div 
                 key={index} 
                 className={`
-                  w-full flex flex-col
+                  w-full flex
                   ${msg.username === currentUsername 
-                    ? 'items-end' 
-                    : 'items-start'}
+                    ? 'justify-end' 
+                    : 'justify-start'}
                 `}
               >
                 <div 
