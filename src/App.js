@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 
 function App() {
@@ -8,6 +8,33 @@ function App() {
   const [gameState, setGameState] = useState(null);
   const [currentView, setCurrentView] = useState('username');
   const [errorMessage, setErrorMessage] = useState('');
+  
+  // Chat-related state
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const chatEndRef = useRef(null);
+
+  // Emoji support function
+  const processEmojis = (message) => {
+    const emojiMap = {
+      ':)': '😊', 
+      ':(': '😞', 
+      ':D': '😄', 
+      ':P': '😛', 
+      '<3': '❤️', 
+      ':O': '😮', 
+      ';)': '😉'
+    };
+
+    return message.split(' ').map(word => 
+      emojiMap[word] || word
+    ).join(' ');
+  };
+
+  // Scroll to bottom of chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   useEffect(() => {
     const newSocket = io('https://tictactoeback.thonymarckdev.online', {
@@ -74,11 +101,20 @@ function App() {
       setErrorMessage(message);
     };
 
+    // Chat message handler
+    const handleChatMessage = (messageData) => {
+      setChatMessages(prev => [...prev, {
+        ...messageData,
+        message: processEmojis(messageData.message)
+      }]);
+    };
+
     socket.on('roomCreated', handleRoomCreated);
     socket.on('gameStarted', handleGameStarted);
     socket.on('updateGame', handleUpdateGame);
     socket.on('gameEnded', handleGameEnded);
     socket.on('roomError', handleRoomError);
+    socket.on('receiveChatMessage', handleChatMessage);
 
     return () => {
       socket.off('roomCreated', handleRoomCreated);
@@ -86,6 +122,7 @@ function App() {
       socket.off('updateGame', handleUpdateGame);
       socket.off('gameEnded', handleGameEnded);
       socket.off('roomError', handleRoomError);
+      socket.off('receiveChatMessage', handleChatMessage);
     };
   }, [socket]);
 
@@ -115,8 +152,20 @@ function App() {
     }
   };
 
+  // Send chat message function
+  const sendChatMessage = () => {
+    if (!chatInput.trim()) return;
+
+    socket.emit('sendChatMessage', {
+      roomId,
+      username,
+      message: chatInput
+    });
+
+    setChatInput('');
+  };
+
   const renderBoard = () => {
-    // Add a guard clause to prevent rendering if gameState is not defined
     if (!gameState || !gameState.board) {
       return null;
     }
@@ -223,46 +272,85 @@ function App() {
         );
 
       case 'game':
-        // Add a guard clause to prevent rendering without complete gameState
         if (!gameState || !gameState.players || !gameState.board) {
           return null;
         }
 
         return (
-          <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-purple-500 to-pink-500">
-            <div className="bg-white p-8 rounded-xl shadow-2xl mb-6 w-full max-w-2xl">
-              <h2 className="text-3xl text-center mb-4">Tic Tac Toe</h2>
-              <div className="flex justify-between mb-4">
-                <div className="flex space-x-4">
-                  <div>
-                    <span className="font-bold">Sala:</span> {roomId}
+          <div className="flex h-screen bg-gradient-to-br from-purple-500 to-pink-500">
+            <div className="w-2/3 flex flex-col items-center justify-center">
+              <div className="bg-white p-8 rounded-xl shadow-2xl mb-6 w-full max-w-2xl">
+                <h2 className="text-3xl text-center mb-4">Tic Tac Toe</h2>
+                <div className="flex justify-between mb-4">
+                  <div className="flex space-x-4">
+                    <div>
+                      <span className="font-bold">Sala:</span> {roomId}
+                    </div>
+                  </div>
+                  <div className="flex space-x-4">
+                    {gameState.players.map((player, index) => (
+                      <div 
+                        key={player.id} 
+                        className={`
+                          p-2 rounded-lg
+                          ${gameState.currentPlayerIndex === index 
+                            ? 'bg-green-200' 
+                            : 'bg-gray-100'
+                          }
+                        `}
+                      >
+                        <span className="font-bold">{player.username}</span>
+                        <span className="ml-2 text-sm">({player.symbol})</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="flex space-x-4">
-                  {gameState.players.map((player, index) => (
-                    <div 
-                      key={player.id} 
-                      className={`
-                        p-2 rounded-lg
-                        ${gameState.currentPlayerIndex === index 
-                          ? 'bg-green-200' 
-                          : 'bg-gray-100'
-                        }
-                      `}
-                    >
-                      <span className="font-bold">{player.username}</span>
-                      <span className="ml-2 text-sm">({player.symbol})</span>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {renderBoard()}
+                </div>
+                <div className="text-center">
+                  <p className="text-xl">
+                    Turno de: {gameState.players[gameState.currentPlayerIndex].username}
+                  </p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {renderBoard()}
+            </div>
+
+            {/* Chat Section */}
+            <div className="w-1/3 bg-white m-4 rounded-xl shadow-2xl flex flex-col">
+              <div className="p-4 bg-purple-600 text-white rounded-t-xl">
+                Sala Chat: {roomId}
               </div>
-              <div className="text-center">
-                <p className="text-xl">
-                  Turno de: {gameState.players[gameState.currentPlayerIndex].username}
-                </p>
+              
+              {/* Chat Messages */}
+              <div className="flex-grow overflow-y-auto p-4">
+                {chatMessages.map((msg, index) => (
+                  <div 
+                    key={index} 
+                    className="mb-2 p-2 bg-gray-100 rounded-lg"
+                  >
+                    <strong>{msg.username}:</strong> {msg.message}
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Chat Input */}
+              <div className="p-4 border-t flex">
+                <input 
+                  type="text" 
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                  placeholder="Escribe un mensaje..."
+                  className="flex-grow p-2 border rounded-l-lg"
+                />
+                <button 
+                  onClick={sendChatMessage}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-r-lg"
+                >
+                  Enviar
+                </button>
               </div>
             </div>
           </div>
