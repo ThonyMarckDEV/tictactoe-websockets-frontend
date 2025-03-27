@@ -73,7 +73,7 @@ const ChatBox = ({
           <div className="flex justify-between items-center p-2 bg-blue-500 text-white rounded-t-xl relative">             
             <h3 className="text-lg font-semibold">Chat</h3>             
             <div className="flex space-x-2 items-center">
-              {/* New messages indicator */}
+              {/* New messages indicator - Visible on desktop when not fullscreen */}
               {hasNewMessages && !isFullscreen && (
                 <div className="text-red-300 flex items-center">
                   <Circle size={10} className="mr-1 animate-pulse" />
@@ -116,7 +116,11 @@ const ChatBox = ({
               onChange={(e) => setChatInput(e.target.value)}               
               onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}               
               placeholder="Escribe un mensaje..."               
-              className="flex-grow p-2 border rounded-l-lg"             
+              className="flex-grow p-2 border rounded-l-lg"
+              onClick={() => {
+                setHasNewMessages(false);
+                setLastReadMessageCount(chatMessages.length);
+              }}             
             />             
             <button                
               onClick={sendChatMessage}               
