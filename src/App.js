@@ -12,6 +12,7 @@ function App() {
   // Chat-related state
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const chatEndRef = useRef(null);
 
   // Emoji support function
@@ -101,7 +102,6 @@ function App() {
       setErrorMessage(message);
     };
 
-    // Chat message handler
     const handleChatMessage = (messageData) => {
       setChatMessages(prev => [...prev, {
         ...messageData,
@@ -152,7 +152,6 @@ function App() {
     }
   };
 
-  // Send chat message function
   const sendChatMessage = () => {
     if (!chatInput.trim()) return;
 
@@ -175,8 +174,8 @@ function App() {
         key={index} 
         onClick={() => makeMove(index)}
         className={`
-          w-32 h-32 border-4 border-purple-700 
-          flex items-center justify-center text-6xl font-bold
+          w-full aspect-square border-2 border-purple-700 
+          flex items-center justify-center text-2xl md:text-4xl font-bold
           cursor-pointer hover:bg-purple-100
           ${cell === null ? 'text-gray-300' : cell === 'X' ? 'text-blue-600' : 'text-red-600'}
         `}
@@ -277,22 +276,25 @@ function App() {
         }
 
         return (
-          <div className="flex h-screen bg-gradient-to-br from-purple-500 to-pink-500">
-            <div className="w-2/3 flex flex-col items-center justify-center">
-              <div className="bg-white p-8 rounded-xl shadow-2xl mb-6 w-full max-w-2xl">
-                <h2 className="text-3xl text-center mb-4">Tic Tac Toe</h2>
-                <div className="flex justify-between mb-4">
-                  <div className="flex space-x-4">
+          <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-purple-500 to-pink-500">
+            {/* Game Board Section */}
+            <div className="w-full md:w-2/3 flex flex-col items-center justify-center p-2 md:p-4">
+              <div className="bg-white p-4 rounded-xl shadow-2xl mb-2 w-full max-w-md">
+                <h2 className="text-2xl text-center mb-2">Tic Tac Toe</h2>
+                
+                {/* Room and Players Info */}
+                <div className="flex flex-col md:flex-row justify-between mb-2">
+                  <div className="flex space-x-2 mb-1 md:mb-0 text-sm">
                     <div>
                       <span className="font-bold">Sala:</span> {roomId}
                     </div>
                   </div>
-                  <div className="flex space-x-4">
+                  <div className="flex flex-wrap justify-center space-x-1">
                     {gameState.players.map((player, index) => (
                       <div 
                         key={player.id} 
                         className={`
-                          p-2 rounded-lg
+                          p-1 rounded-lg text-xs
                           ${gameState.currentPlayerIndex === index 
                             ? 'bg-green-200' 
                             : 'bg-gray-100'
@@ -300,34 +302,67 @@ function App() {
                         `}
                       >
                         <span className="font-bold">{player.username}</span>
-                        <span className="ml-2 text-sm">({player.symbol})</span>
+                        <span className="ml-1">({player.symbol})</span>
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 mb-4">
+
+                {/* Game Board */}
+                <div className="grid grid-cols-3 gap-1 mb-2">
                   {renderBoard()}
                 </div>
+
+                {/* Current Turn */}
                 <div className="text-center">
-                  <p className="text-xl">
+                  <p className="text-sm md:text-base">
                     Turno de: {gameState.players[gameState.currentPlayerIndex].username}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Chat Section */}
-            <div className="w-1/3 bg-white m-4 rounded-xl shadow-2xl flex flex-col">
-              <div className="p-4 bg-purple-600 text-white rounded-t-xl">
-                Sala Chat: {roomId}
+            {/* Chat Section with Mobile Toggle */}
+            <div className="fixed bottom-4 right-4 z-50 md:hidden">
+              <button 
+                onClick={() => setIsChatOpen(!isChatOpen)}
+                className="bg-purple-600 text-white p-3 rounded-full shadow-lg"
+              >
+                {isChatOpen ? '✖' : '💬'}
+              </button>
+            </div>
+
+            <div className={`
+              fixed inset-0 bg-black/50 z-40 
+              ${isChatOpen ? 'block md:hidden' : 'hidden'}
+              `}
+              onClick={() => setIsChatOpen(false)}
+            ></div>
+
+            <div className={`
+              fixed bottom-0 left-0 right-0 
+              bg-white rounded-t-xl shadow-2xl
+              transition-transform duration-300 z-50
+              ${isChatOpen ? 'translate-y-0' : 'translate-y-full'}
+              md:static md:translate-y-0 md:block md:w-1/3 md:h-[90%] md:my-auto
+              ${isChatOpen ? 'h-[80%]' : 'h-auto'}
+            `}>
+              <div className="p-3 bg-purple-600 text-white rounded-t-xl flex justify-between items-center">
+                <span className="text-sm">Sala Chat: {roomId}</span>
+                <button 
+                  className="md:hidden"
+                  onClick={() => setIsChatOpen(false)}
+                >
+                  ✖
+                </button>
               </div>
               
               {/* Chat Messages */}
-              <div className="flex-grow overflow-y-auto p-4">
+              <div className="flex-grow overflow-y-auto p-2 h-[calc(100%-120px)]">
                 {chatMessages.map((msg, index) => (
                   <div 
                     key={index} 
-                    className="mb-2 p-2 bg-gray-100 rounded-lg"
+                    className="mb-1 p-1 bg-gray-100 rounded-lg text-sm"
                   >
                     <strong>{msg.username}:</strong> {msg.message}
                   </div>
@@ -336,18 +371,18 @@ function App() {
               </div>
 
               {/* Chat Input */}
-              <div className="p-4 border-t flex">
+              <div className="p-2 border-t flex">
                 <input 
                   type="text" 
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
                   placeholder="Escribe un mensaje..."
-                  className="flex-grow p-2 border rounded-l-lg"
+                  className="flex-grow p-1 border rounded-l-lg text-sm"
                 />
                 <button 
                   onClick={sendChatMessage}
-                  className="bg-purple-600 text-white px-4 py-2 rounded-r-lg"
+                  className="bg-purple-600 text-white px-2 py-1 rounded-r-lg text-sm"
                 >
                   Enviar
                 </button>
