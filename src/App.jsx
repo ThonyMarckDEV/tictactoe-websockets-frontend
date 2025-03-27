@@ -35,7 +35,7 @@ function App() {
   };
 
   useEffect(() => {
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io('https://tictactoeback.thonymarckdev.online', {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 10,
