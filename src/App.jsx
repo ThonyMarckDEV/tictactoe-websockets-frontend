@@ -164,6 +164,8 @@ function App() {
     setCurrentView('username');
     setGameState(null);
     setGameResult(null);
+    setUsername(''); // Add this line to reset username
+    setRoomId('');   // Add this line to reset room ID
   };
 
   const sendChatMessage = () => {
