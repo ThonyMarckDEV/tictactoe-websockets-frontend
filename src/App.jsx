@@ -18,7 +18,11 @@ function App() {
   const [gameResult, setGameResult] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
-  const [rematchStatus, setRematchStatus] = useState({ current: 0, total: 2 });
+  const [rematchStatus, setRematchStatus] = useState({ 
+    current: 0, 
+    total: 2,
+    timeRemaining: null 
+  });
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   const confettiConfig = {
@@ -33,6 +37,8 @@ function App() {
     height: "10px",
     colors: ["#a864fd", "#29cdff", "#78ff44", "#ff718d", "#fdff6a"]
   };
+
+
 
   useEffect(() => {
     const newSocket = io('https://tictactoeback.thonymarckdev.online', {
@@ -59,10 +65,12 @@ function App() {
     };
   }, []);
 
+
   useEffect(() => {
     if (!socket) return;
 
     const handleSocketEvents = {
+
       roomCreated: (data) => {
         setGameState(data.roomDetails);
         setRoomId(data.roomId);
@@ -70,38 +78,62 @@ function App() {
         setChatMessages([]);
         setRematchStatus({ current: 0, total: 2 });
       },
+
       gameStarted: (roomDetails) => {
         setGameState(roomDetails);
         setCurrentView('game');
         setGameResult(null);
         setShowConfetti(false);
+        // Reiniciar estado de revancha
         setRematchStatus({ current: 0, total: 2 });
         setChatMessages([]);
       },
+
       updateGame: (roomDetails) => {
         setGameState(roomDetails);
       },
+
       gameEnded: (result) => {
         setGameResult(result);
         setCurrentView('gameEnd');
         setShowConfetti(result.winner !== 'Draw');
         setChatMessages([]);
       },
+
       roomError: (message) => {
         setErrorMessage(message);
       },
+
       playerLeft: () => {
         setCurrentView('username');
         setGameState(null);
         setGameResult(null);
         alert('El otro jugador ha abandonado la sala.');
       },
+
       receiveChatMessage: (message) => {
         setChatMessages(prev => [...prev, message]);
       },
+
       rematchUpdate: (status) => {
         setRematchStatus(status);
-      }
+      },
+
+      rematchTimeout: (status) => {
+        // Handle rematch timeout
+        setCurrentView('username');
+        setGameState(null);
+        setGameResult(null);
+        alert(`Revancha caducada. Solo ${status.accepted}/${status.total} jugadores aceptaron.`);
+      },
+
+      forceDisconnect: () => {
+        // Handle forced disconnection
+        setCurrentView('username');
+        setGameState(null);
+        setGameResult(null);
+        alert('La sala ha sido cerrada debido a la falta de acuerdo para la revancha.');
+      },
     };
 
     Object.entries(handleSocketEvents).forEach(([event, handler]) => {
@@ -153,11 +185,11 @@ function App() {
   };
 
   const handleExit = () => {
-    socket.emit('exitRoom', { roomId, username });
-    setCurrentView('username');
-    setGameState(null);
-    setGameResult(null);
-  };
+  //socket.emit('exitRoom', { roomId, username });
+  setCurrentView('username');
+  setGameState(null);
+  setGameResult(null);
+};
 
   const sendChatMessage = () => {
     if (chatInput.trim() && socket) {
@@ -212,12 +244,15 @@ function App() {
       case 'gameEnd':
         return (
           <GameEndView 
+            socket={socket}
+            roomId={roomId}
+            username={username}
+            onExit={handleExit}
             gameResult={gameResult}
             showConfetti={showConfetti}
             confettiConfig={confettiConfig}
             rematchStatus={rematchStatus}
             handleRematch={handleRematch}
-            handleExit={handleExit}
             isChatOpen={isChatOpen}
             setIsChatOpen={setIsChatOpen}
             chatMessages={chatMessages}
