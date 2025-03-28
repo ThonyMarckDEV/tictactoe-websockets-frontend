@@ -36,8 +36,8 @@ function App() {
 
 
   useEffect(() => {
-    //const newSocket = io('https://tictactoeback.thonymarckdev.online', {
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io('https://tictactoeback.thonymarckdev.online', {
+    //const newSocket = io('http://localhost:5000', {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 10,
@@ -189,7 +189,7 @@ function App() {
   const handleRematch = () => {
     socket.emit('requestRematch', { roomId, username });
   };
-  
+
   const renderContent = () => {
     switch(currentView) {
       case 'username':
