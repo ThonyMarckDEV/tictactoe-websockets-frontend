@@ -18,11 +18,6 @@ function App() {
   const [gameResult, setGameResult] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
-  const [rematchStatus, setRematchStatus] = useState({ 
-    current: 0, 
-    total: 2,
-    timeRemaining: null 
-  });
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   const confettiConfig = {
@@ -76,7 +71,6 @@ function App() {
         setRoomId(data.roomId);
         setCurrentView('waitingRoom');
         setChatMessages([]);
-        setRematchStatus({ current: 0, total: 2 });
       },
 
       gameStarted: (roomDetails) => {
@@ -84,8 +78,6 @@ function App() {
         setCurrentView('game');
         setGameResult(null);
         setShowConfetti(false);
-        // Reiniciar estado de revancha
-        setRematchStatus({ current: 0, total: 2 });
         setChatMessages([]);
       },
 
@@ -113,18 +105,6 @@ function App() {
 
       receiveChatMessage: (message) => {
         setChatMessages(prev => [...prev, message]);
-      },
-
-      rematchUpdate: (status) => {
-        setRematchStatus(status);
-      },
-
-      rematchTimeout: (status) => {
-        // Handle rematch timeout
-        setCurrentView('username');
-        setGameState(null);
-        setGameResult(null);
-        alert(`Revancha caducada. Solo ${status.accepted}/${status.total} jugadores aceptaron.`);
       },
 
       forceDisconnect: () => {
@@ -180,16 +160,11 @@ function App() {
     }
   };
 
-  const handleRematch = () => {
-    socket.emit('requestRematch', { roomId });
-  };
-
   const handleExit = () => {
-  //socket.emit('exitRoom', { roomId, username });
-  setCurrentView('username');
-  setGameState(null);
-  setGameResult(null);
-};
+    setCurrentView('username');
+    setGameState(null);
+    setGameResult(null);
+  };
 
   const sendChatMessage = () => {
     if (chatInput.trim() && socket) {
@@ -233,6 +208,8 @@ function App() {
             gameState={gameState}
             roomId={roomId}
             makeMove={makeMove}
+
+            // Para el chat
             isChatOpen={isChatOpen}
             setIsChatOpen={setIsChatOpen}
             chatMessages={chatMessages}
@@ -251,8 +228,8 @@ function App() {
             gameResult={gameResult}
             showConfetti={showConfetti}
             confettiConfig={confettiConfig}
-            rematchStatus={rematchStatus}
-            handleRematch={handleRematch}
+
+            // Para el chat
             isChatOpen={isChatOpen}
             setIsChatOpen={setIsChatOpen}
             chatMessages={chatMessages}
