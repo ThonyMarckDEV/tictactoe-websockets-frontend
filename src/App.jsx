@@ -211,6 +211,10 @@ function App() {
             roomId={roomId}
             makeMove={makeMove}
 
+            //Para slair
+            socket={socket}  // Add this line
+            onExit={handleExit}  // Add this line
+
             // Para el chat
             isChatOpen={isChatOpen}
             setIsChatOpen={setIsChatOpen}
