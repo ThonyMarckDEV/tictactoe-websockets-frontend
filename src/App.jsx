@@ -19,7 +19,7 @@ function App() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(false);
-
+  const [rematchStatus, setRematchStatus] = useState({ current: 0, total: 2 });
   const confettiConfig = {
     angle: 90,
     spread: 360,
@@ -36,7 +36,8 @@ function App() {
 
 
   useEffect(() => {
-    const newSocket = io('https://tictactoeback.thonymarckdev.online', {
+    //const newSocket = io('https://tictactoeback.thonymarckdev.online', {
+    const newSocket = io('http://localhost:5000', {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 10,
@@ -71,6 +72,7 @@ function App() {
         setRoomId(data.roomId);
         setCurrentView('waitingRoom');
         setChatMessages([]);
+        setRematchStatus({ current: 0, total: 2 });
       },
 
       gameStarted: (roomDetails) => {
@@ -78,11 +80,16 @@ function App() {
         setCurrentView('game');
         setGameResult(null);
         setShowConfetti(false);
+        setRematchStatus({ current: 0, total: 2 });
         setChatMessages([]);
       },
 
       updateGame: (roomDetails) => {
         setGameState(roomDetails);
+      },
+
+      rematchUpdate: (status) => {
+        setRematchStatus(status);
       },
 
       gameEnded: (result) => {
@@ -179,6 +186,10 @@ function App() {
     }
   };
 
+  const handleRematch = () => {
+    socket.emit('requestRematch', { roomId, username });
+  };
+  
   const renderContent = () => {
     switch(currentView) {
       case 'username':
@@ -230,6 +241,11 @@ function App() {
             socket={socket}
             roomId={roomId}
             username={username}
+
+            //REMATCH
+            rematchStatus={rematchStatus}
+            handleRematch={handleRematch}
+
             onExit={handleExit}
             gameResult={gameResult}
             showConfetti={showConfetti}
